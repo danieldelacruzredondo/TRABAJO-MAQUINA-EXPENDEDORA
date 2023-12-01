@@ -5,204 +5,139 @@ entity MAQUINA_EXPENDEDORA is
   Port (
     CLK: IN STD_LOGIC;
     RESET: IN STD_LOGIC;
-    BTNC_10: IN STD_LOGIC;
-    BTNU_20: IN STD_LOGIC;
-    BTNL_50: IN std_logic;
-    BTND_100: IN STD_LOGIC;
-    CODE: OUT STD_LOGIC_VECTOR (3 downto 0)
-    --Asignamos un botón por cada moneda que podemos introducir.--
+    CONT: IN STD_LOGIC_VECTOR (3 downto 0);
+    SELECC_PROD: IN STD_LOGIC_VECTOR (3 downto 0); 
+    VENDER: OUT STD_LOGIC;                      
+    ERROR: OUT STD_LOGIC;
+    LED: OUT STD_LOGIC_VECTOR (3 DOWNTO 0)
+                                              
      );
 end MAQUINA_EXPENDEDORA;
 
 architecture Behavioral of MAQUINA_EXPENDEDORA is
-type STATE_T is (S0_0c, S1_10c, S2_20c, S3_30c, S4_40c, S5_50c, s6_60c, s7_70c, S8_80C, S9_90c, S10_100c);
---Cada estado va de 10 centimos en 10 centimos, ya que es la moneda más pequeña que se puede meter--
-signal state, nxt_state : STATE_T;
-signal signalcode: std_logic_vector(3 downto 0);
-
+type STATES is (S0, --Estado de reposo
+                S1, -- Producto 1 seleccionado
+                S2, -- Producto 2 seleccionado
+                S3, -- Producto 3 seleccionado
+                S4, -- Producto 4 seleccionado
+                S5, -- Contador = 1.4$ venta prod 1           
+                S6, -- Contador = 1.4$ venta prod 2
+                S7, -- Contador = 1.4$ venta prod 3
+                S8, -- Contador = 1.4$ venta prod 4
+                S9);
+ signal current_state: STATES := S0;
+ signal next_state: STATES;
 begin
---variable contador: real :='0'
-state_reg:process(CLK) 
+    
+	state_reg:process(CLK) 
     begin
     	if rising_edge(CLK) then
         	if RESET = '0' then
-            	state<= S0_0c;
+            	current_state<= S0;
             else 
-            	state<= nxt_state; --Igual para cada maquina de estados--
+            	current_state <= next_state; --Igual para cada maquina de estados--
    			end if;
    		end if;
    end process;
    
-nxtst_decoder: process (state, BTNC_10, BTNU_20, BTNL_50, BTND_100)
+    nxtst_decoder: process (current_state, SELECC_PROD, CONT)
     begin 
-    	nxt_state<= state;
-    	case state is
-    	
-    	   when S0_0c =>
-                if BTNC_10='1' then
-                    nxt_state<= S1_10c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S2_20c;
-                elsif BTNL_50='1' then
-                    nxt_state<=S5_50c;
-                elsif BTND_100='1' then
-                    nxt_state<=S10_100c;
-                end if;
-                
-            when S1_10c =>
-                if BTNC_10='1' then
-                    nxt_state<= S2_20c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S3_30c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s6_60c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-            
-             when S2_20c =>
-                if BTNC_10='1' then
-                    nxt_state<= S3_30c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S4_40c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s7_70c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-                
-             when S3_30c =>
-                if BTNC_10='1' then
-                    nxt_state<= S4_40c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S5_50c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s8_80c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-             
-              when S4_40c =>
-                if BTNC_10='1' then
-                    nxt_state<= S5_50c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S6_60c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s9_90c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-                
-              when S5_50c =>
-                if BTNC_10='1' then
-                    nxt_state<= S6_60c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S7_70c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s9_90c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-                
-              when S6_60c =>
-                if BTNC_10='1' then
-                    nxt_state<= S7_70c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S8_80c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s0_0c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-                
-              when S7_70c =>
-                if BTNC_10='1' then
-                    nxt_state<= S8_80c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S9_90c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s0_0c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-                
-              when S8_80c =>
-                if BTNC_10='1' then
-                    nxt_state<= S9_90c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S10_100c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s0_0c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-                
-               when S9_90c =>
-                if BTNC_10='1' then
-                    nxt_state<= S10_100c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S0_0c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s0_0c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;
-                
-               when S10_100c =>
-                if BTNC_10='1' then
-                    nxt_state<= S0_0c;
-                elsif BTNU_20='1' then
-                    nxt_state<= S0_0c;
-                elsif BTNL_50='1' then
-                    nxt_state<=s0_0c;
-                elsif BTND_100='1' then
-                    nxt_state<=S0_0c; --Como nos hemos pasado del euro que podemos introducir, volvemos al estado inicial.
-                end if;                
-            end case;   
-  end process;  
-      
-  output_decoder:process(state)
-  
-   begin 
-   case state is
+    	next_state<= current_state;
+    	case current_state is
         
-        	when S0_0c =>
-            	signalcode<= "0000" ;
-                               
-            when S1_10c =>
-          		signalcode<= "0001";
-                
-            when S2_20c =>
-                signalcode<="0010";
-                
-            when S3_30c =>
-            	signalcode<= "0011";
-                               
-            when S4_40c =>
-          		signalcode<= "0100";
-                
-            when S5_50c =>
-                signalcode<="0101";
+        	when S0=>
+            	if SELECC_PROD = "0001" then
+                	next_state<=S1; 
+                elsif SELECC_PROD = "0010" then
+                    next_state<=S2; 
+                elsif SELECC_PROD = "0100" then
+                    next_state<=S3; 
+                elsif SELECC_PROD = "1000" then
+                    next_state<=S4;
+                --elsif SELECC_PROD = others then     Si se activan dos o mas switches a la vez
+                   -- next_state<=S0;           
+                end if;
             
-            when S6_60c =>
-            	signalcode<= "0110";
-                               
-            when S7_70c =>
-          		signalcode<= "0111";
-                
-            when S8_80c =>
-                signalcode<="1000";
-                
-            when S9_90c =>
-            	signalcode<= "1001" ;
-                               
-            when S10_100c =>
-          		signalcode<= "1010";
-                
-            when others =>
-                signalcode<= "0000";
-            	           
+            when S1=> 
+                if CONT = "1110" then
+                    next_state<=S5;
+                end if;   
+             when S2=> 
+                if CONT<= "1110" then
+                    next_state<=S6;  
+                end if;
+                   
+              when S3=> 
+                if CONT<= "1110" then
+                    next_state<=S7;        
+                end if;
+                    
+               when S4=> 
+                if CONT<= "1110" then
+                    next_state<=S8;
+                end if;
+                                                                          
+            when others=>
+            	next_state<=S0;
+            
         end case;
-end process;
-code<=signalcode;
+    
+    end process;
+    
+    output_decoder:process(current_state)
+    begin        
+    	case current_state is
+        
+        	when S0=>
+            	LED<= "0000";
+            	vender<='0';
+            	error<='0';
+                               
+            when S1=>
+          		LED<="0001";
+          		vender<='0';
+            	error<='0';
+                
+            when S2=>
+            	LED<="0010";
+            	vender<='0';
+            	error<='0';
+            
+            when S3=>
+            	LED<="0100";
+            	vender<='0';
+            	error<='0';
+            	
+            when S4=>
+            	LED<="1000";
+            	vender<='0';
+            	error<='0';
+            when S5=>
+          		LED<="0001";
+          		vender<='1';
+            	error<='0';
+                
+            when S6=>
+            	LED<="0010";
+            	vender<='1';
+            	error<='0';
+            
+            when S7=>
+            	LED<="0100";
+            	vender<='1';
+            	error<='0';
+            	
+            when S8=>
+            	LED<="1000";
+            	vender<='1';
+            	error<='0';
+            	
+            	
+            when others=>
+            	LED<= "0000";
+            	error<='1';
+            	vender<='0';            	           
+        end case;
+    end process;
+    
 end Behavioral;
