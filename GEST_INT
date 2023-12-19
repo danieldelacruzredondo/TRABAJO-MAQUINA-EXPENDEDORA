@@ -1,0 +1,109 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity GEST_INT is Port ( 
+    BTNC: IN STD_LOGIC;
+    BTNU: IN STD_LOGIC;
+    BTNL: IN STD_LOGIC;
+    BTND: IN STD_LOGIC;    
+    CLK: IN std_logic;
+    RESET: IN std_logic;
+    LIGHT: OUT STD_LOGIC_VECTOR(3 downto 0)
+    );
+end GEST_INT;
+
+architecture Behavioral of GEST_INT is
+signal moneda: std_logic_vector (3 downto 0);
+signal sync_sal : std_logic_vector (3 downto 0);
+signal deb_sal : std_logic_vector (3 downto 0);
+signal led: std_logic_vector (3 downto 0);
+signal NEW_CLK: std_logic;
+
+component SYNCHRNZR PORT(
+ CLK : in std_logic;
+ ASYNC_IN : in std_logic;
+ RESET: IN STD_LOGIC;
+ SYNC_OUT : out std_logic
+
+);
+end component;
+
+component debouncer PORT(
+        CLK	: in std_logic;
+        RESET: IN STD_LOGIC;
+	    btn_in	: in std_logic;
+	    btn_out	: out std_logic
+
+);
+end component;
+
+component EDGEDTCTR  PORT(
+ CLK : in std_logic;
+ SYNC_IN : in std_logic;
+ RESET: IN STD_LOGIC;
+ EDGE : out std_logic
+
+);
+end component;
+
+component DIV_FREC PORT(
+        entrada: in  STD_LOGIC;
+        reset  : in  STD_LOGIC;
+        salida : out STD_LOGIC
+);
+end component;
+
+begin
+
+Inst_DIV_FREC: DIV_FREC PORT MAP(
+        entrada=>clk,
+        reset=>RESET,
+        salida=>NEW_CLK
+);
+
+moneda(0)<=BTNC; --Boton asociado a introducir 10 cents
+moneda(1)<=BTNU; --Boton asociado a introducir 20 cents
+moneda(2)<=BTNL; --Boton asociado a introducir 50 cents
+moneda(3)<=BTND; --Boton asociado a introducir 1 EURO
+
+botones: for i in 0 to 3 generate
+
+Inst_synchronizer: SYNCHRNZR PORT MAP (
+ CLK =>NEW_CLK,
+ ASYNC_IN =>moneda(i),
+ RESET =>RESET,
+ SYNC_OUT =>sync_sal(i)
+
+ 
+);
+
+Inst_debouncer: debouncer PORT MAP (
+        clk	=>NEW_CLK,
+        RESET=>RESET,
+	    btn_in=>sync_sal(i),
+	    btn_out	=>deb_sal(i)
+ 
+);
+
+
+Inst_edge_detector: EDGEDTCTR PORT MAP (
+    CLK =>NEW_CLK,
+    SYNC_IN =>deb_sal(i),
+    RESET=>RESET,
+    EDGE =>LIGHT(i)
+
+);
+
+end generate botones;
+
+
+end Behavioral;
