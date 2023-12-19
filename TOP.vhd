@@ -10,14 +10,12 @@ entity TOP is
     CLK: IN std_logic;
     RESET: IN STD_LOGIC;
     PRODUCTO: IN STD_LOGIC_VECTOR (3 downto 0);
-    DIGSEL: IN STD_LOGIC_VECTOR (13 to 15);   --Los tres displays de la derecha los
-    DIGCTRL: OUT STD_LOGIC_VECTOR( 2 DOWNTO 0);  --activaremos mediante negacion de switches.
+    DIGSEL: out STD_LOGIC_VECTOR (2 downto 0);  
     ERROR: OUT STD_LOGIC;
     VENTA: OUT STD_LOGIC;
-    LED_PROD: OUT STD_LOGIC_VECTOR (3 downto 0);
-    SEGMENT1: OUT std_logic_vector (6 downto 0);
-    SEGMENT2: OUT std_logic_vector (6 downto 0);
-    SEGMENT3: OUT std_logic_vector (6 downto 0)
+    LED_PROD: OUT STD_LOGIC_VECTOR (15 downto 12);
+    SEGMENT: OUT std_logic_vector (6 downto 0);
+    DP: OUT STD_LOGIC
         
     );
 end TOP;
@@ -25,139 +23,100 @@ end TOP;
 architecture structural of TOP is
 
 signal moneda: std_logic_vector (3 downto 0);
-signal sync_sal : std_logic_vector (3 downto 0);
-signal deb_sal : std_logic_vector (3 downto 0);
+
 signal edge_sal : std_logic_vector (3 downto 0);
 signal code: std_logic_vector (3 downto 0);
+signal sigerr: std_logic;
+signal sigven: std_logic;
+signal importe_exacto: std_logic; -- Señal que relaciona el counter con la fsm
 
-
-component SYNCHRNZR PORT(
- CLK : in std_logic;
- ASYNC_IN : in std_logic;
- RESET: IN STD_LOGIC;
- SYNC_OUT : out std_logic
-
+component GEST_INT PORT(
+    BTNC: IN STD_LOGIC;
+    BTNU: IN STD_LOGIC;
+    BTNL: IN STD_LOGIC;
+    BTND: IN STD_LOGIC;    
+    CLK: IN std_logic;
+    RESET: IN std_logic;
+    EDGE_SAL: OUT STD_LOGIC_VECTOR(3 downto 0)
 );
-end component;
+END COMPONENT;
 
-component debouncer PORT(
-        clk	: in std_logic;
-	    btn_in	: in std_logic;
-	    btn_out	: out std_logic
-
-);
-end component;
-
-component EDGEDTCTR  PORT(
- CLK : in std_logic;
- SYNC_IN : in std_logic;
- RESET: IN STD_LOGIC;
- EDGE : out std_logic
-
-);
-end component;
 
 component COUNTER  PORT(
     CLK: IN STD_LOGIC;
-    RESET: IN STD_LOGIC;
-    ERROR: IN STD_LOGIC;
-    VENDER: IN STD_LOGIC;
-    BTNC_10: IN STD_LOGIC;
-    BTNU_20: IN STD_LOGIC;
-    BTNL_50: IN STD_LOGIC;
-    BTND_100: IN STD_LOGIC;
-    DINERO_TOT: OUT STD_LOGIC_VECTOR (3 DOWNTO 0)
-
+    RESET: IN STD_LOGIC;    
+    BOTON: IN STD_LOGIC_VECTOR (3 DOWNTO 0);
+    DINERO_TOT: OUT STD_LOGIC_VECTOR (3 DOWNTO 0);
+    IMP_EXACTO: OUT STD_LOGIC
 );
 end component;
 
 component maquina_expendedora  PORT(
     CLK: IN STD_LOGIC;
     RESET: IN STD_LOGIC;
-    CONT: IN STD_LOGIC_VECTOR (3 downto 0);
-    SELECC_PROD: IN STD_LOGIC_VECTOR (3 downto 0); 
-    VENDER: OUT STD_LOGIC;                      
-    ERROR: OUT STD_LOGIC;
-    LED: OUT STD_LOGIC_VECTOR (3 DOWNTO 0)
+    BOTON: IN STD_LOGIC_VECTOR (3 downto 0); --Dinero que vamos introduciendo.
+    CUENTA: IN STD_LOGIC; -- La pondremos a '1' cuando se retorne 1,40$ desde el counter.
+    SELECC_PROD: IN STD_LOGIC_VECTOR (3 downto 0);                         
+    LED_ERROR: OUT STD_LOGIC;
+    LED_VENTA: OUT STD_LOGIC;
+    LED_PROD: OUT STD_LOGIC_VECTOR (3 DOWNTO 0)
     
 );
 end component;
 
---component decoder PORT(
---code : IN std_logic_vector(3 DOWNTO 0);
---segment1 : OUT std_logic_vector(6 DOWNTO 0);  --display mas a la derecha
---segment2 : OUT STD_LOGIC_VECTOR (6 downto 0); --segundo display
---segment3: OUT STD_LOGIC_VECTOR (6 DOWNTO 0)   --tercer display
---);
---end component;
+component decoder PORT(
+CLK: IN STD_LOGIC;
+RESET: IN STD_LOGIC;
+CODE : IN std_logic_vector(3 DOWNTO 0);
+anodo : OUT std_logic_vector(2 DOWNTO 0);
+segment : OUT STD_LOGIC_VECTOR (6 downto 0);
+dt : OUT std_logic
+
+);
+end component;
 
 begin
 
-moneda(0)<=BTNC; --Boton asociado a introducir 10 cents
-moneda(1)<=BTNU; --Boton asociado a introducir 20 cents
-moneda(2)<=BTNL; --Boton asociado a introducir 50 cents
-moneda(3)<=BTND; --Boton asociado a introducir 1 EURO
-
-botones: for i in 0 to 3 generate
-
-Inst_synchronizer: SYNCHRNZR PORT MAP (
- CLK =>clk,
- ASYNC_IN =>moneda(i),
- RESET =>RESET,
- SYNC_OUT =>sync_sal(i)
-
- 
+Inst_GEST_INT: GEST_INT PORT MAP(
+    BTNC=>BTNC,
+    BTNU=>BTNU,
+    BTNL=>BTNL,
+    BTND=>BTND,   
+    CLK=>clk,
+    RESET=>reset,
+    EDGE_SAL=>edge_sal
 );
 
-Inst_debouncer: debouncer PORT MAP (
-        clk	=>clk,
-	    btn_in=>sync_sal(i),
-	    btn_out	=>deb_sal(i)
- 
-);
-
-
-Inst_edge_detector: EDGEDTCTR PORT MAP (
-    CLK =>clk,
-    SYNC_IN =>deb_sal(i),
-    RESET=>RESET,
-    EDGE =>edge_sal(i)
-
-);
-
-end generate botones;
 
 Inst_counter: counter PORT MAP(
-    CLK => CLK,
-    RESET => RESET,
-    ERROR => error,
-    VENDER => venta,
-    BTNC_10 => edge_sal(0),
-    BTNU_20=> edge_sal(1),
-    BTNL_50=>edge_sal(2),
-    BTND_100 => edge_sal(3),
-    DINERO_TOT => code
+    CLK=>CLK,
+    RESET=>RESET,   
+    BOTON=>edge_sal,
+    DINERO_TOT=>code, -- Señal que sale del counter para relacionarlo con el decoder
+    IMP_EXACTO=>importe_exacto   
 );
 
 Inst_maquina_expendedora: MAQUINA_EXPENDEDORA PORT MAP (
-    CLK=>clk,
+    CLK=>CLK,
     RESET=>RESET,
-    CONT=>code,
-    SELECC_PROD => PRODUCTO,
-    VENDER=>venta,                     
-    ERROR=>error,
-    LED=> LED_PROD    
+    BOTON=>edge_sal,
+    CUENTA=>importe_exacto,
+    SELECC_PROD=>PRODUCTO,                        
+    LED_ERROR => ERROR,
+    LED_VENTA => VENTA,
+    LED_PROD => LED_PROD
+       
 );
 
---Inst_decoder: decoder PORT MAP (
-    --code =>signcode,
-    --segment1 => sigled1, --display mas a la derecha
-    --SEGMENT2 => sigled2, --segundo display
-    --SEGMENT3 => sigled3  --tercer display
---);
-
-
-
-digctrl<= not digsel;
+Inst_decoder: decoder PORT MAP (
+    CLK=>clk,
+    RESET=>reset,
+    CODE => code,
+    anodo =>DIGSEL,
+    segment =>SEGMENT,
+    dt =>DP
+);
+    
 
 end structural;
+
