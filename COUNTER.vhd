@@ -5,41 +5,55 @@ use ieee.std_logic_arith.all;
 
 entity COUNTER is Port ( 
     CLK: IN STD_LOGIC;
-    RESET: IN STD_LOGIC;
-    BTNC_10: IN STD_LOGIC;
-    BTNU_20: IN STD_LOGIC;
-    BTNL_50: IN STD_LOGIC;
-    BTND_100: IN STD_LOGIC;
-    DINERO_TOT: OUT STD_LOGIC_VECTOR (3 DOWNTO 0)-- Introducimos hasta un máximo de 1,50 que 
-                                                 -- es lo que costarán las bebidas.
+    RESET: IN STD_LOGIC;    
+    BOTON: IN STD_LOGIC_VECTOR (3 DOWNTO 0);
+    DINERO_TOT: OUT STD_LOGIC_VECTOR (3 DOWNTO 0);
+    IMP_EXACTO: OUT STD_LOGIC -- Devuelve un '1' cuando llegamos al 1,40 y se lo pasamos a la FSM.
 );
 end COUNTER;
 
 architecture Behavioral of COUNTER is
+
 signal contador_aux: unsigned (4 downto 0):="00000";
+signal contador_aux2: std_logic_vector (4 downto 0);
+signal ven: std_logic;
+
 begin
 process(clk,reset)
 begin
     if reset='0' then
-        contador_aux<= "0000";
+        contador_aux<= "00000";   
+        
     elsif rising_edge(clk) then
-        if BTNC_10 = '1' then
-            contador_aux<=contador_aux + "0001";
+        if BOTON = "0001" then -- Sumamos 10 cents.
+            contador_aux<=contador_aux + "00001";
             end if;
-        if BTNU_20 = '1' then
-            contador_aux<=contador_aux + "0010";
+        if BOTON = "0010" then --Sumamos 20 cents.
+            contador_aux<=contador_aux + "00010";
             end if;
-        if BTNL_50 = '1' then
-            contador_aux<=contador_aux + "0101";
+        if BOTON = "0100" then -- Sumamos 50 cents.
+            contador_aux<=contador_aux + "00101";
             end if;
-        if BTND_100 = '1' then
+        if BOTON = "1000" then --Sumamos 1 euro.
             contador_aux<=contador_aux + "1010";
             end if;
 
 
     end if;
     end process;
- with contador_aux select
+    contador_aux2<= STD_LOGIC_VECTOR(contador_aux);
+    
+    process(contador_aux2)
+    begin
+    if contador_aux2 = "01110" THEN 
+                 ven<='1';  -- Pasamos un '1' a la FSM cuando lleguemos al 1,40$
+    end if;
+    end process;
+    
+    IMP_EXACTO<=ven;
+    
+ with contador_aux2 select
+ 
  DINERO_TOT  <= "0000" when "00000",  -- 0C INTRODUCIDOS
                 "0001" when "00001",  -- 10C INTRODUCIDOS
                 "0010" when "00010",  -- 20C INTRODUCIDOS
@@ -56,5 +70,5 @@ begin
                 "1101" when "01101",  -- 130C INTRODUCIDOS
                 "1110" when "01110",  -- 140C INTRODUCIDOS
                 "1111" when others;
-                                 
+                                                                                      
 end Behavioral;
