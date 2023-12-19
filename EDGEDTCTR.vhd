@@ -21,8 +21,12 @@ begin
  sreg <= sreg(1 downto 0) & SYNC_IN;
  end if;
  end process;
- 
+
  EDGE <= '0' when RESET = '0'
         else '1' when sreg = "100"
         else '0';
 end BEHAVIORAL;
+
+ 
+ 
+
