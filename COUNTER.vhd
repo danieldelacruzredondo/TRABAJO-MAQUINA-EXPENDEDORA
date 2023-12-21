@@ -6,7 +6,7 @@ use ieee.std_logic_arith.all;
 entity COUNTER is Port ( 
     CLK: IN STD_LOGIC;
     RESET: IN STD_LOGIC;    
-    BOTON: IN STD_LOGIC_VECTOR (3 DOWNTO 0);
+    BOTON: IN STD_LOGIC_VECTOR (3 DOWNTO 0);   
     DINERO_TOT: OUT STD_LOGIC_VECTOR (3 DOWNTO 0);
     IMP_EXACTO: OUT STD_LOGIC -- Devuelve un '1' cuando llegamos al 1,40 y se lo pasamos a la FSM.
 );
@@ -16,7 +16,8 @@ architecture Behavioral of COUNTER is
 
 signal contador_aux: unsigned (4 downto 0):="00000";
 signal contador_aux2: std_logic_vector (4 downto 0);
-signal ven: std_logic;
+signal ven: std_logic:='0';-- Igualar a 0
+
 
 begin
 process(clk,reset)
@@ -45,11 +46,13 @@ begin
     
     process(contador_aux2)
     begin
-    if contador_aux2 = "01110" THEN 
-                 ven<='1';  -- Pasamos un '1' a la FSM cuando lleguemos al 1,40$
-    end if;
-    end process;
     
+    if contador_aux2 = "01110" THEN 
+                 ven<='1'; -- Pasamos un '1' a la FSM cuando lleguemos al 1,40$
+    end if;   
+    end process;   
+    
+     
     IMP_EXACTO<=ven;
     
  with contador_aux2 select
@@ -72,3 +75,4 @@ begin
                 "1111" when others;
                                                                                       
 end Behavioral;
+
