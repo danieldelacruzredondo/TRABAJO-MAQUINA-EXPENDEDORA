@@ -7,6 +7,7 @@ entity COUNTER is Port (
     CLK: IN STD_LOGIC;
     RESET: IN STD_LOGIC;    
     BOTON: IN STD_LOGIC_VECTOR (3 DOWNTO 0);   
+    REC_PROD: IN STD_LOGIC:='0'; -- Inicializamos la variable de recoger producto.
     DINERO_TOT: OUT STD_LOGIC_VECTOR (3 DOWNTO 0);
     IMP_EXACTO: OUT STD_LOGIC -- Devuelve un '1' cuando llegamos al 1,40 y se lo pasamos a la FSM.
 );
@@ -36,7 +37,10 @@ begin
             contador_aux<=contador_aux + "00101";
             end if;
         if BOTON = "1000" then --Sumamos 1 euro.
-            contador_aux<=contador_aux + "1010";
+            contador_aux<=contador_aux + "01010";
+            end if;
+        if REC_PROD ='1' then   
+            contador_aux<="00000";
             end if;
 
 
@@ -51,8 +55,8 @@ begin
                  ven<='1'; -- Pasamos un '1' a la FSM cuando lleguemos al 1,40$
     end if;   
     end process;   
-    
-     
+        
+               
     IMP_EXACTO<=ven;
     
  with contador_aux2 select
