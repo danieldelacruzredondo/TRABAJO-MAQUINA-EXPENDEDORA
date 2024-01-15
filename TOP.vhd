@@ -50,7 +50,8 @@ END COMPONENT;
 component COUNTER  PORT(
     CLK: IN STD_LOGIC;
     RESET: IN STD_LOGIC;    
-    BOTON: IN STD_LOGIC_VECTOR (3 DOWNTO 0);   
+    BOTON: IN STD_LOGIC_VECTOR (3 DOWNTO 0); 
+    REC_PROD: IN STD_LOGIC;  
     DINERO_TOT: OUT STD_LOGIC_VECTOR (3 DOWNTO 0);
     IMP_EXACTO: OUT STD_LOGIC
 );
@@ -103,7 +104,7 @@ Inst_GEST_INT: GEST_INT PORT MAP(
 Inst_counter: counter PORT MAP(
     CLK=>CLK,
     RESET=>RESET,  
-     
+    REC_PROD=>REC_PROD,
     BOTON(0)=>edge_salida(0),
     BOTON(1)=>edge_salida(1),
     BOTON(2)=>edge_salida(2),
