@@ -15,12 +15,14 @@ end COUNTER;
 
 architecture Behavioral of COUNTER is
 
-signal contador_aux: unsigned (4 downto 0):="00000";
-signal contador_aux2: std_logic_vector (4 downto 0);
+signal contador_aux: unsigned (4 downto 0):= (others => '0');
+signal contador_aux2: std_logic_vector (4 downto 0):= (others => '0');
 signal ven: std_logic:='0';-- Igualar a 0
 
-
 begin
+contador_aux2<= std_logic_vector(unsigned(contador_aux));
+IMP_EXACTO<=ven;
+
 process(clk,reset)
 begin
     if reset='0' then
@@ -29,35 +31,55 @@ begin
     elsif rising_edge(clk) then
         if BOTON = "0001" then -- Sumamos 10 cents.
             contador_aux<=contador_aux + "00001";
+            if contador_aux2 >= "01110" then
+                contador_aux <= "00000";
+                end if;
             end if;
         if BOTON = "0010" then --Sumamos 20 cents.
             contador_aux<=contador_aux + "00010";
+            if contador_aux2 >= "01110" then
+                contador_aux <= "00000";
+                end if;
             end if;
         if BOTON = "0100" then -- Sumamos 50 cents.
             contador_aux<=contador_aux + "00101";
+            if contador_aux2 >= "01110" then
+                contador_aux <= "00000";
+                end if;
             end if;
         if BOTON = "1000" then --Sumamos 1 euro.
             contador_aux<=contador_aux + "01010";
+            if contador_aux2 >= "01110" then
+                contador_aux <= "00000";
+                end if;
             end if;
-        if REC_PROD ='1' then   
+        if REC_PROD = '1' then
             contador_aux<="00000";
+            --ven <= '0'; 
             end if;
 
 
     end if;
     end process;
-    contador_aux2<= STD_LOGIC_VECTOR(contador_aux);
     
     process(contador_aux2)
     begin
     
     if contador_aux2 = "01110" THEN 
                  ven<='1'; -- Pasamos un '1' a la FSM cuando lleguemos al 1,40$
+    else ven<='0';
+    
     end if;   
     end process;   
-        
-               
-    IMP_EXACTO<=ven;
+    
+    --process(REC_PROD)  --Por algun motivo que desconozco este process evita que aux2 copie el contenido de aux
+    --begin
+    
+    --if REC_PROD = '1' THEN 
+    --    contador_aux <= (others => '0'); -- Ponemos a 0 el contador.
+             
+    --end if;   
+    --end process;
     
  with contador_aux2 select
  
